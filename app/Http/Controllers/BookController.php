@@ -4,23 +4,71 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use Illuminate\Http\Request;
+use Validator;
 
 class BookController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $book = Book::all();
+        if($book->isEmpty()) 
+        {
+            return response()->json([
+                'message' => 'Data Books Kosong',
+                'error' => true
+            ], 404); //404 Not Found
+        }
+
+        return response()->json([
+            'data' => $book,
+            'message' => 'Data Books Ditemukan',
+            'status' => 200
+        ], 200);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'category_id' => 'required|exists:categories,id',
+            'title' => 'required|string|max:255',
+            'author' => 'required|string|max:255',
+            'publisher' => 'required|string|max:255',
+            'rack_id' => 'required|exists:racks,id',
+            'release_date' => 'required|date_format:Y',
+            'ISBN' => 'required|string|max:20|unique:books,ISBN',
+            'stock' => 'required|integer|min:1',
+        ]);
+
+        if($validator->fails()) 
+        {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Ada Kesalahan',
+                'data' => $validator->erros(),
+            ]);
+        }
+
+        $book = Book::create([
+            'category_id' => $request->category_id,
+            'title' => $request->title,
+            'author' => $request->author,
+            'publisher' => $request->publisher,
+            'rack_id' => $request->rack_id,
+            'release_date' => $request->release_date,
+            'ISBN' => $request->ISBN,
+            'stock' => $request->stock,
+        ]);
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Data Books Berhasil Ditambahkan',
+        ], 200);
     }
 
     /**
